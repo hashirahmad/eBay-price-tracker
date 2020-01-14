@@ -1,0 +1,30 @@
+{
+    "urlsToTrack": [{
+        "url": "",
+        "belowWhatPrice": 0,
+        "lastListedItem": {
+            "title": "",
+            "newListing": true,
+            "price": 0,
+            "url": "",
+            "fastNfree": false,
+            "postage": "0",
+            "bestOffer": false
+        }
+    }],
+    "howOftenInMins": 10,
+    "chrome": {
+        "headless": true,
+        "x": 1400,
+        "y": 1000,
+        "devtools": false
+    },
+    "email": {
+        "readme": "You will need to enable LESS SECURE APPS from Google setting. Essential it is!",
+        "sendEmailTo": "YOUR EMAIL",
+        "gmail": {
+            "username": "YOUR EMAIL",
+            "password": "YOUR EMAIL PASSWORD"
+        }
+    }
+}

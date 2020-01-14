@@ -1,0 +1,19 @@
+{
+  "name": "ebay-price-tracker",
+  "version": "0.0.1",
+  "description": "Takes list of eBay URLs and tracks them for new products, new deals and sends an email when new product comes below a certain criteria",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Hashir Ahmad",
+  "license": "ISC",
+  "dependencies": {
+    "cli-progress": "^3.4.0",
+    "jsonfile": "^5.0.0",
+    "nodemailer": "^6.4.2",
+    "prompt": "^1.0.0",
+    "puppeteer": "^2.0.0",
+    "yargs": "^15.0.2"
+  }
+}
