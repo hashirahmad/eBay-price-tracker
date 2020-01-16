@@ -184,9 +184,14 @@ async function job(page){
 
         }, config.urlsToTrack[u].lastListedItem, stringifiedFunction )
         
-        config.urlsToTrack[u].lastListedItem = newItems[0]
-        await saveConfig(config)
-        newItems = await getDescriptionsSendEmail( newItems, page )
+        if ( newItems.length > 0 ) {
+
+            config.urlsToTrack[u].lastListedItem = newItems[0]
+            console.log('newItems', newItems, JSON.stringify(config, null, 4) )
+            await saveConfig(config)
+            newItems = await getDescriptionsSendEmail( newItems, page )
+        
+        }
         
     }
 
