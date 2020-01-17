@@ -93,68 +93,82 @@ async function run() {
 async function getDescriptionsSendEmail( items, page ) {
     
     for (let i in items) {
-        
-        let item = items[i]
-        
-        await page.goto(item.url)
-        await page.waitForSelector('#desc_ifr')
-        let descriptionURL = await page.evaluate(() => {
-            return document.querySelector('#desc_ifr').src
-        })
-        
-        await page.goto(descriptionURL)
-        let description = await page.evaluate(() => {
-            return window.ds_div.outerText
-        })
 
-        item.description = description
-        console.log('Sending email =>', item.title )
-        email.send(item)
-        
+        let item = items[i]
+        try {
+            
+            await page.goto(item.url)
+            await page.waitForSelector('#desc_ifr')
+            let descriptionURL = await page.evaluate(() => {
+                return document.querySelector('#desc_ifr').src
+            })
+            
+            await page.goto(descriptionURL)
+            let description = await page.evaluate(() => {
+                return window.ds_div.outerText
+            })
+    
+            item.description = description
+            console.log('Sending email =>', item.title )
+            email.send(item)
+
+        } catch (e) {
+            console.log('Description failure => ', item.title)
+            console.log('Description failure => ', e, '\n\n')
+        }
+         
     }
     return items
     
 }
 
-function extractProduct(lastItem) {
+function extractProduct(lastItem, belowWhatPrice) {
     
-    let items = Array.from( document.querySelector('.b-list__items_nofooter').children )
-    let products = []
-    for ( let i in items ) {
-        
-        let item = items[i]
-        let product = {
-            title: item.querySelector('.s-item__title').textContent.replace('New listing', '')
-            , newListing: item.querySelector('.s-item__title').textContent.startsWith('New listing')
-            , price: parseFloat( item.querySelector('.s-item__price').textContent.replace('£', '') )
-            , url: item.querySelector('.s-item__image').firstElementChild.href
-            , fastNfree: item.querySelector('.s-item__fnf') ? true : false
-            , postage: 0
-            , bestOffer: false
-        }
-        
-        if ( lastItem.url === product.url ) {
-            return products
-        } else {
+    try {
+    
+        let items = Array.from( document.querySelector('.b-list__items_nofooter').children )
+        let products = []
+        for ( let i in items ) {
             
-            if ( item.querySelector('.s-item__shipping.s-item__logisticsCost') ) {
+            let item = items[i]
+            let product = {
+                title: item.querySelector('.s-item__title').textContent.replace('New listing', '')
+                , newListing: item.querySelector('.s-item__title').textContent.startsWith('New listing')
+                , price: parseFloat( item.querySelector('.s-item__price').textContent.replace('£', '') )
+                , url: item.querySelector('.s-item__image').firstElementChild.href
+                , fastNfree: item.querySelector('.s-item__fnf') ? true : false
+                , postage: 0
+                , bestOffer: false
+            }
+            
+            if ( lastItem.url === product.url ) {
+                return products
+            } else {
                 
-                product.postage = item.querySelector('.s-item__shipping.s-item__logisticsCost').textContent
+                if ( item.querySelector('.s-item__shipping.s-item__logisticsCost') ) {
+                    
+                    product.postage = item.querySelector('.s-item__shipping.s-item__logisticsCost').textContent
+                    
+                }
+                
+                if ( item.querySelector('.s-item__purchase-options.s-item__purchaseOptions') ) {
+                    
+                    let bestOffer = item.querySelector('.s-item__purchase-options.s-item__purchaseOptions').textContent
+                    product.bestOffer = bestOffer.includes('Best Offer')
+                    
+                }
+    
+                if ( product.bestOffer || product.price <= belowWhatPrice ) products.push( product )
                 
             }
             
-            if ( item.querySelector('.s-item__purchase-options.s-item__purchaseOptions') ) {
-                
-                let bestOffer = item.querySelector('.s-item__purchase-options.s-item__purchaseOptions').textContent
-                product.bestOffer = bestOffer.includes('Best Offer')
-                
-            }
-            products.push( product )
-            
         }
+        return products
         
+    } catch (e) {
+        console.log('Invalid listing => I have yet to extract it correctly')
+        console.log('Invalid List error =>', e, '\n\n')
     }
-    return products
     
 }
 
@@ -177,17 +191,17 @@ async function job(page){
             inside the scope
         */
         let stringifiedFunction = `(${extractProduct.toString()})`
-        let newItems = await page.evaluate( (lastItem, extractProduct) => {
+        let newItems = await page.evaluate( (thisConfig, extractProduct) => {
             
             extractProduct = eval(extractProduct)
-            return extractProduct(lastItem) 
+            return extractProduct(thisConfig.lastListedItem, thisConfig.belowWhatPrice)
 
-        }, config.urlsToTrack[u].lastListedItem, stringifiedFunction )
+        }, config.urlsToTrack[u], stringifiedFunction )
         
+        // console.log('newItems', newItems, JSON.stringify(config, null, 4) )
         if ( newItems.length > 0 ) {
 
             config.urlsToTrack[u].lastListedItem = newItems[0]
-            console.log('newItems', newItems, JSON.stringify(config, null, 4) )
             await saveConfig(config)
             newItems = await getDescriptionsSendEmail( newItems, page )
         
